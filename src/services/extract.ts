@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 import { UniversityRaw } from '../models/university';
 
 const BASE_URL = 'http://universities.hipolabs.com/search';
@@ -15,7 +16,7 @@ export async function* fetchUniversityDataStream(): AsyncGenerator<UniversityRaw
 
   while (keepGoing) {
     const url = `${BASE_URL}?country=United+States&limit=${PAGE_SIZE}&offset=${offset}`;
-    console.log(`📡 Fetching data — offset: ${offset}`);
+    logger.info(`📡 Fetching data — offset: ${offset}`);
 
     try {
       const res = await axios.get<UniversityRaw[]>(url, {
@@ -40,10 +41,10 @@ export async function* fetchUniversityDataStream(): AsyncGenerator<UniversityRaw
 
       offset += PAGE_SIZE;
     } catch (error) {
-      console.error(`❌ Error fetching data at offset ${offset}:`, error);
+      logger.error(`❌ Error fetching data at offset ${offset}:`, error);
       keepGoing = false;
     }
   }
 
-  console.log(`✅ Streaming completed.`);
+  logger.info(`✅ Streaming completed.`);
 }
