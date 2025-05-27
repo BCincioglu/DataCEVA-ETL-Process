@@ -1,22 +1,47 @@
 import cron from 'node-cron';
-import { runETL } from '../scripts/etlScript'; // ETL runner'ı dışarıya export etmelisin
+import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
+import { runETL } from '../scripts/etlScript';
+import { sleep } from '../utils/sleep';
 
-logger.info('🕒 ETL Scheduler initialized. Task will run every 24 hours.');
+dotenv.config();
 
-// Schedule to run every 24 hours at Midnight UTC.
-cron.schedule(
-  process.env.CRON_EXPRESSION!,
-  async () => {
-    logger.info(`⏰ Scheduled ETL task started (${process.env.CRON_TIMEZONE})...`);
+const CRON_EXPRESSION = process.env.CRON_EXPRESSION || '0 0 * * *';
+const CRON_TIMEZONE = process.env.CRON_TIMEZONE || 'UTC';
+const RETRY_DELAY_MS = Number(process.env.RETRY_DELAY_MS) || 300000; // 5 minutes
+
+
+export async function scheduledJobForETL() {
+  let attempt = 1;
+
+  while (true) {
     try {
+      logger.info(`[Attempt ${attempt}] Running ETL process...`);
       await runETL();
-      logger.info('✅ Scheduled ETL task completed successfully.');
+      logger.info('ETL completed successfully.');
+      break; // break after successful execution
     } catch (err) {
-      logger.error('❌ Scheduled ETL task failed:', err);
+      logger.error(`[Attempt ${attempt}] ETL failed. Retrying in ${RETRY_DELAY_MS / 60000} minutes...`);
+      attempt++;
+      await sleep(RETRY_DELAY_MS);
     }
-  },
-  {
-    timezone: process.env.CRON_TIMEZONE || 'UTC',
   }
-);
+}
+
+
+logger.info(`Scheduling ETL job with expression "${CRON_EXPRESSION}" (${CRON_TIMEZONE})`);
+
+try {
+  cron.schedule(
+    CRON_EXPRESSION,
+    () => {
+      logger.info('Cron job triggered. Starting ETL...');
+      scheduledJobForETL();
+    },
+    {
+      timezone: CRON_TIMEZONE,
+    }
+  );
+} catch (err) {
+  logger.error('Failed to schedule cron job:', err);
+}
