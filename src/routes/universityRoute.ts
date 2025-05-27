@@ -3,7 +3,7 @@ import { downloadUniversityCSVController } from '../controllers/universityContro
 
 const router = express.Router();
 
-// Route: GET /api/universities.csv
+// Route: GET /api/universities
 router.get('/universities', downloadUniversityCSVController);
 
 export default router;

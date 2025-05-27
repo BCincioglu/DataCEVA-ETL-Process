@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { UniversityRaw } from '../models/university';
+import { University, UniversityRaw } from '../models/university';
 import { logger } from '../utils/logger';
 import { sleep } from '../utils/sleep';
 
