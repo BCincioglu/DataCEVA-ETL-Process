@@ -1,5 +1,9 @@
 /node_modules
+/coverage
 /dist
+/data
+/logs
 /.env
 .DS_Store
 Thumbs.db
+.last-hash.txt
