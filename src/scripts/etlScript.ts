@@ -1,19 +1,26 @@
 import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
-dotenv.config();
-
 import { fetchUniversityDataStream } from '../services/extract';
 import { transformUniversity } from '../services/transform';
 import { createCSVWriter } from '../services/load';
 import { hasDataChanged, saveCurrentHash } from '../utils/hash';
+import { connectMongo } from '../config/db';
+import { upsertUniversity } from '../services/upsert';
+import { UniversityRaw } from '../models/university';
+
+dotenv.config();
+
+
+
 
 /**
  * Main ETL runner. Orchestrates data extraction, transformation and loading.
  */
-export async function runETL() {
-  logger.info('🚀 Starting ETL process...');
 
-  const rawData = [];
+export async function runETL() {
+  logger.info('Starting ETL process...');
+
+  const rawData: UniversityRaw[] = [];
 
   try {
     for await (const rawRecord of fetchUniversityDataStream()) { // Extract all the data first, for checking hash.
@@ -25,20 +32,28 @@ export async function runETL() {
       return;
     }
 
+      try {
+      await connectMongo();
+    } catch (err) {
+      logger.error('Failed to connect to MongoDB:', err);
+      return;
+    }
+
     const writer = createCSVWriter();
     let count = 0;
 
     for (const rawRecord of rawData) {
-      const transformed = transformUniversity(rawRecord);
-      writer.write(transformed);
-      count++;
-    }
+    const transformed = transformUniversity(rawRecord);
+    writer.write(transformed);
+    await upsertUniversity(transformed);
+    count++;
+  }
 
     writer.close();
     saveCurrentHash(rawData);
-    logger.info(`✅ ETL process completed. ${count} record(s) written to CSV.`);
+    logger.info(`ETL process completed. ${count} record(s) written to CSV and stored in MongoDB.`);
   } catch (err) {
-    logger.error('❌ ETL process failed:', err);
+    logger.error('ETL process failed:', err);
   }
 }
 
