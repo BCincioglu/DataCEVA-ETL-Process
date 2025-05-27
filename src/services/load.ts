@@ -26,24 +26,15 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 export function createCSVWriter() {
   const stream = fs.createWriteStream(OUTPUT_PATH, { flags: 'w' });
 
-  // Write CSV headers
   const header = stringify([['name', 'country', 'domain', 'website']]);
   stream.write(header);
 
   return {
-    /**
-     * Writes a single university record as a CSV row.
-     *
-     * @param row - The transformed university data
-     */
     write: (row: University) => {
       const csvRow = stringify([[row.name, row.country, row.domain, row.website]]);
       stream.write(csvRow);
     },
 
-    /**
-     * Closes the CSV file stream.
-     */
     close: () => stream.end()
   };
 }
