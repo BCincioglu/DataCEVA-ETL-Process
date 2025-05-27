@@ -9,7 +9,7 @@ describe('Hash Utilities', () => {
   const modifiedData = { name: 'Modified University', country: 'USA' };
 
   afterEach(() => {
-    // Temizlik: hash dosyasını sil
+    // Clean up the hash file after each test
     if (fs.existsSync(HASH_FILE_PATH)) {
       fs.unlinkSync(HASH_FILE_PATH);
     }
